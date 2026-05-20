@@ -603,7 +603,7 @@ class PackageTreeWidget(QWidget):
 
 
 class AdvancedSettingsWidget(QWidget):
-    """Widget for advanced settings."""
+    """Widget for advanced settings — simple two-column form, no sections."""
     settings_changed = pyqtSignal(dict)
 
     def __init__(self, parent=None):
@@ -611,15 +611,14 @@ class AdvancedSettingsWidget(QWidget):
         self._setup_ui()
 
     def _setup_ui(self):
-        layout = QVBoxLayout(self)
-        layout.setSpacing(8)
+        grid = QGridLayout(self)
+        grid.setVerticalSpacing(12)
+        grid.setHorizontalSpacing(16)
+        grid.setContentsMargins(8, 8, 8, 8)
 
-        # Partition Settings
-        part_group = QGroupBox("💾 Partition Settings")
-        part_layout = QGridLayout()
-        part_layout.setVerticalSpacing(4)
-
-        part_layout.addWidget(QLabel("Boot partition size:"), 0, 0)
+        # ── Partition size ──
+        grid.addWidget(QLabel("💾 Boot partition size:"), 0, 0)
+        part_row = QHBoxLayout()
         self.partition_size_spin = QSpinBox()
         self.partition_size_spin.setRange(MIN_BOOT_PARTITION_SIZE_MB, MAX_BOOT_PARTITION_SIZE_MB)
         self.partition_size_spin.setValue(DEFAULT_BOOT_PARTITION_SIZE_MB)
@@ -627,85 +626,72 @@ class AdvancedSettingsWidget(QWidget):
         self.partition_size_spin.setSuffix(" MB")
         self.partition_size_spin.valueChanged.connect(self._on_change)
         self.partition_size_spin.valueChanged.connect(self._update_size_note)
-        part_layout.addWidget(self.partition_size_spin, 0, 1)
-
+        part_row.addWidget(self.partition_size_spin)
         self.size_note = QLabel(self._make_size_note_text(DEFAULT_BOOT_PARTITION_SIZE_MB))
         self.size_note.setStyleSheet("color: #a6adc8; font-size: 11px;")
-        part_layout.addWidget(self.size_note, 1, 1)
+        part_row.addWidget(self.size_note, 1)
+        grid.addLayout(part_row, 0, 1)
 
-        part_group.setLayout(part_layout)
-        layout.addWidget(part_group)
-
-        # GRUB Settings
-        grub_group = QGroupBox("🔧 GRUB Settings")
-        grub_layout = QGridLayout()
-
-        grub_layout.addWidget(QLabel("Timeout (seconds):"), 0, 0)
+        # ── GRUB timeout ──
+        grid.addWidget(QLabel("🔧 GRUB timeout (sec):"), 1, 0)
         self.timeout_spin = QSpinBox()
         self.timeout_spin.setRange(0, 120)
         self.timeout_spin.setValue(DEFAULT_GRUB_TIMEOUT)
         self.timeout_spin.valueChanged.connect(self._on_change)
-        grub_layout.addWidget(self.timeout_spin, 0, 1)
+        grid.addWidget(self.timeout_spin, 1, 1)
 
-        grub_layout.addWidget(QLabel("Kernel parameters:"), 1, 0)
+        # ── Kernel params ──
+        grid.addWidget(QLabel("🔧 Kernel parameters:"), 2, 0)
         self.kernel_params = QLineEdit(DEFAULT_KERNEL_PARAMS)
         self.kernel_params.textChanged.connect(self._on_change)
-        grub_layout.addWidget(self.kernel_params, 1, 1)
+        grid.addWidget(self.kernel_params, 2, 1)
 
-        grub_group.setLayout(grub_layout)
-        layout.addWidget(grub_group)
-
-        # Boot Mode
-        boot_group = QGroupBox("💿 Boot Mode")
-        boot_layout = QVBoxLayout()
-
+        # ── Boot mode ──
+        grid.addWidget(QLabel("💿 Boot mode:"), 3, 0)
+        boot_row = QHBoxLayout()
         self.direct_boot_cb = QCheckBox("Direct kernel/initrd boot (recommended)")
         self.direct_boot_cb.setChecked(True)
         self.direct_boot_cb.toggled.connect(self._on_change)
-        boot_layout.addWidget(self.direct_boot_cb)
-
-        self.iso_boot_cb = QCheckBox("Boot from ISO images (larger, but more compatible)")
+        boot_row.addWidget(self.direct_boot_cb)
+        self.iso_boot_cb = QCheckBox("Boot from ISO")
         self.iso_boot_cb.toggled.connect(self._on_change)
-        boot_layout.addWidget(self.iso_boot_cb)
+        boot_row.addWidget(self.iso_boot_cb)
+        boot_row.addStretch()
+        grid.addLayout(boot_row, 3, 1)
 
-        boot_group.setLayout(boot_layout)
-        layout.addWidget(boot_group)
-
-        # Custom TCZ
-        custom_group = QGroupBox("📁 Custom Packages")
-        custom_layout = QVBoxLayout()
-
+        # ── Custom TCZ ──
+        grid.addWidget(QLabel("📁 Custom packages:"), 4, 0)
+        tcz_row = QHBoxLayout()
         self.custom_tcz_list = QTextEdit()
         self.custom_tcz_list.setPlaceholderText(
             "Drag & drop or type paths to custom .tcz files\nOne per line"
         )
-        self.custom_tcz_list.setMaximumHeight(80)
+        self.custom_tcz_list.setMaximumHeight(64)
         self.custom_tcz_list.textChanged.connect(self._on_change)
-        custom_layout.addWidget(self.custom_tcz_list)
-
-        browse_btn = QPushButton("Browse for .tcz files")
+        tcz_row.addWidget(self.custom_tcz_list, 1)
+        browse_btn = QPushButton("Browse .tcz")
         browse_btn.clicked.connect(self._browse_tcz)
-        custom_layout.addWidget(browse_btn)
+        tcz_row.addWidget(browse_btn)
+        grid.addLayout(tcz_row, 4, 1)
 
-        custom_group.setLayout(custom_layout)
-        layout.addWidget(custom_group)
-
-        # Profile Management
-        profile_group = QGroupBox("💾 Profile Management")
-        profile_layout = QHBoxLayout()
-
+        # ── Profile Management (buttons at the bottom, full width) ──
+        grid.addWidget(QLabel("💾 Profile:"), 5, 0)
+        profile_row = QHBoxLayout()
         save_profile_btn = QPushButton("Save Profile")
         save_profile_btn.clicked.connect(self._save_profile)
-        profile_layout.addWidget(save_profile_btn)
-
+        profile_row.addWidget(save_profile_btn)
         load_profile_btn = QPushButton("Load Profile")
         load_profile_btn.clicked.connect(self._load_profile)
-        profile_layout.addWidget(load_profile_btn)
+        profile_row.addWidget(load_profile_btn)
+        profile_row.addStretch()
+        grid.addLayout(profile_row, 5, 1)
 
-        profile_group.setLayout(profile_layout)
-        layout.addWidget(profile_group)
-
-        layout.addStretch()
+        # Push everything to the top
+        grid.setRowStretch(6, 1)
+        # Make column 1 stretch
+        grid.setColumnStretch(1, 1)
+        # Uniform label width
+        grid.setColumnMinimumWidth(0, 180)
 
     def _make_size_note_text(self, mb: int) -> str:
         """Generate a human-readable note about partition size."""
