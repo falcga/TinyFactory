@@ -612,25 +612,26 @@ class AdvancedSettingsWidget(QWidget):
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
+        layout.setSpacing(8)
 
         # Partition Settings
         part_group = QGroupBox("💾 Partition Settings")
         part_layout = QGridLayout()
+        part_layout.setVerticalSpacing(4)
 
-        part_layout.addWidget(QLabel("Boot partition size (MB):"), 0, 0)
+        part_layout.addWidget(QLabel("Boot partition size:"), 0, 0)
         self.partition_size_spin = QSpinBox()
         self.partition_size_spin.setRange(MIN_BOOT_PARTITION_SIZE_MB, MAX_BOOT_PARTITION_SIZE_MB)
         self.partition_size_spin.setValue(DEFAULT_BOOT_PARTITION_SIZE_MB)
         self.partition_size_spin.setSingleStep(50)
+        self.partition_size_spin.setSuffix(" MB")
         self.partition_size_spin.valueChanged.connect(self._on_change)
+        self.partition_size_spin.valueChanged.connect(self._update_size_note)
         part_layout.addWidget(self.partition_size_spin, 0, 1)
 
-        size_note = QLabel(
-            f"Range: {MIN_BOOT_PARTITION_SIZE_MB}–{MAX_BOOT_PARTITION_SIZE_MB} MB. "
-            f"Default: {DEFAULT_BOOT_PARTITION_SIZE_MB} MB"
-        )
-        size_note.setStyleSheet("color: #a6adc8; font-size: 11px;")
-        part_layout.addWidget(size_note, 1, 1)
+        self.size_note = QLabel(self._make_size_note_text(DEFAULT_BOOT_PARTITION_SIZE_MB))
+        self.size_note.setStyleSheet("color: #a6adc8; font-size: 11px;")
+        part_layout.addWidget(self.size_note, 1, 1)
 
         part_group.setLayout(part_layout)
         layout.addWidget(part_group)
@@ -705,6 +706,16 @@ class AdvancedSettingsWidget(QWidget):
         layout.addWidget(profile_group)
 
         layout.addStretch()
+
+    def _make_size_note_text(self, mb: int) -> str:
+        """Generate a human-readable note about partition size."""
+        gb = mb / 1024
+        if gb >= 1.0:
+            return f"≈ {gb:.1f} GB. Range: {MIN_BOOT_PARTITION_SIZE_MB}–{MAX_BOOT_PARTITION_SIZE_MB} MB"
+        return f"Range: {MIN_BOOT_PARTITION_SIZE_MB}–{MAX_BOOT_PARTITION_SIZE_MB} MB"
+
+    def _update_size_note(self, value: int):
+        self.size_note.setText(self._make_size_note_text(value))
 
     def _on_change(self):
         """Emit settings changed signal."""
