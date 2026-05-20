@@ -50,15 +50,15 @@ QLabel {
 QGroupBox {
     color: #cdd6f4;
     border: 1px solid #45475a;
-    border-radius: 6px;
-    margin-top: 12px;
-    padding-top: 16px;
+    border-radius: 8px;
+    margin-top: 14px;
+    padding: 20px 12px 16px 12px;
     font-weight: bold;
 }
 QGroupBox::title {
     subcontrol-origin: margin;
-    left: 10px;
-    padding: 0 5px;
+    left: 12px;
+    padding: 0 6px;
     color: #89b4fa;
 }
 QPushButton {
@@ -68,7 +68,7 @@ QPushButton {
     border-radius: 6px;
     padding: 8px 16px;
     font-size: 13px;
-    min-height: 20px;
+    min-height: 32px;
 }
 QPushButton:hover {
     background-color: #585b70;
@@ -109,9 +109,9 @@ QComboBox {
     color: #cdd6f4;
     border: 1px solid #45475a;
     border-radius: 6px;
-    padding: 6px 12px;
+    padding: 8px 12px;
     font-size: 13px;
-    min-height: 20px;
+    min-height: 36px;
 }
 QComboBox:hover {
     border-color: #89b4fa;
@@ -174,11 +174,39 @@ QTextEdit, QLineEdit, QSpinBox {
     color: #cdd6f4;
     border: 1px solid #45475a;
     border-radius: 6px;
-    padding: 6px;
+    padding: 8px 12px;
     font-size: 13px;
+    min-height: 36px;
 }
 QTextEdit:focus, QLineEdit:focus, QSpinBox:focus {
     border-color: #89b4fa;
+}
+QSpinBox::down-button, QSpinBox::up-button {
+    width: 28px;
+    border: none;
+    background: transparent;
+}
+QSpinBox::down-button:hover, QSpinBox::up-button:hover {
+    background-color: #45475a;
+    border-radius: 4px;
+}
+QSpinBox::up-arrow {
+    image: none;
+    width: 10px;
+    height: 10px;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 8px solid #cdd6f4;
+    margin-top: 6px;
+}
+QSpinBox::down-arrow {
+    image: none;
+    width: 10px;
+    height: 10px;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 8px solid #cdd6f4;
+    margin-bottom: 6px;
 }
 QProgressBar {
     border: 1px solid #45475a;
