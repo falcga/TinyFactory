@@ -27,6 +27,8 @@ from core.config import (
     ARCH_UNAVAILABLE_PACKAGES, DEFAULT_GRUB_TIMEOUT,
     DEFAULT_KERNEL_PARAMS, DEFAULT_BOOT_PARTITION_SIZE_MB,
     MIN_BOOT_PARTITION_SIZE_MB, MAX_BOOT_PARTITION_SIZE_MB,
+    TINY_CORE_VERSION, TINY_CORE_DEFAULT, AVAILABLE_VERSIONS,
+    ARCHES_TEMPLATE, get_arches_for_version,
     Profile, get_data_dir, get_log_path, get_logs_dir,
     get_session_log_path,
 )
@@ -915,17 +917,42 @@ class MainWindow(QMainWindow):
         packages_tab = QWidget()
         packages_layout = QVBoxLayout(packages_tab)
 
-        # Three-column package layout
-        package_splitter = QSplitter(Qt.Orientation.Horizontal)
+        # Version tabs
+        version_bar = QHBoxLayout()
+        version_bar.addWidget(QLabel("Tiny Core Version:"))
+        self.version_combo = QComboBox()
+        for v in AVAILABLE_VERSIONS:
+            self.version_combo.addItem(f"v{v.rstrip('.x')}", v)
+        self.version_combo.setCurrentText(f"v{TINY_CORE_VERSION.rstrip('.x')}")
+        self.version_combo.currentIndexChanged.connect(self._on_version_changed)
+        version_bar.addWidget(self.version_combo)
 
-        self.pkg_trees = {}
-        for arch in ["x86", "x86_64", "aarch64"]:
-            tree = PackageTreeWidget(arch)
-            tree.selection_changed.connect(self._on_package_selection)
-            package_splitter.addWidget(tree)
-            self.pkg_trees[arch] = tree
+        self.add_version_btn = QPushButton("+ Add Version")
+        self.add_version_btn.clicked.connect(self._add_version_tab)
+        version_bar.addWidget(self.add_version_btn)
 
-        packages_layout.addWidget(package_splitter, 1)
+        self.remove_version_btn = QPushButton("− Remove")
+        self.remove_version_btn.clicked.connect(self._remove_version_tab)
+        version_bar.addWidget(self.remove_version_btn)
+
+        version_bar.addStretch()
+        packages_layout.addLayout(version_bar)
+
+        # Version tab widget
+        self.version_tabs = QTabWidget()
+        packages_layout.addWidget(self.version_tabs, 1)
+
+        # Create default version tab
+        self.version_configs: Dict[str, dict] = {}
+        self._create_version_tab(TINY_CORE_VERSION)
+
+        # Sync checkbox
+        sync_row = QHBoxLayout()
+        self.sync_cb = QCheckBox("🔗 Sync selections across all architectures (same packages for x86, x86_64, aarch64)")
+        self.sync_cb.toggled.connect(self._on_sync_toggled)
+        sync_row.addWidget(self.sync_cb)
+        sync_row.addStretch()
+        packages_layout.addLayout(sync_row)
 
         # Download button row
         download_row = QHBoxLayout()
@@ -1028,6 +1055,107 @@ class MainWindow(QMainWindow):
     # ──────────────────────────────────────────────
     # Actions
     # ──────────────────────────────────────────────
+
+    def _on_version_changed(self, idx: int):
+        """Handle version combo box change - switch active version tab."""
+        version = self.version_combo.itemData(idx)
+        if version and version in self.version_configs:
+            # Show existing tab
+            for i in range(self.version_tabs.count()):
+                if self.version_tabs.tabText(i) == f"v{version.rstrip('.x')}":
+                    self.version_tabs.setCurrentIndex(i)
+                    break
+
+    def _create_version_tab(self, version: str):
+        """Create a version tab with package trees for all architectures."""
+        if version in self.version_configs:
+            return
+
+        arches = get_arches_for_version(version)
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+
+        pkg_trees = {}
+        for arch in ["x86", "x86_64", "aarch64"]:
+            tree = PackageTreeWidget(arch)
+            tree.selection_changed.connect(self._on_package_selection)
+            tree.populate()
+            splitter.addWidget(tree)
+            pkg_trees[arch] = tree
+
+        layout.addWidget(splitter, 1)
+        self.version_configs[version] = pkg_trees
+        display = f"v{version.rstrip('.x')}"
+        self.version_tabs.addTab(tab, display)
+
+        # If first version, set it as current
+        if self.version_tabs.count() == 1:
+            self.version_tabs.setCurrentIndex(0)
+
+    def _add_version_tab(self):
+        """Add a new version tab from the combo selection."""
+        idx = self.version_combo.currentIndex()
+        version = self.version_combo.itemData(idx)
+        if not version:
+            return
+
+        if version in self.version_configs:
+            QMessageBox.information(self, "Already Open",
+                f"Tab for Tiny Core {version} is already open.")
+            return
+
+        self._create_version_tab(version)
+
+    def _remove_version_tab(self):
+        """Remove the current version tab."""
+        idx = self.version_tabs.currentIndex()
+        if idx < 0 or self.version_tabs.count() <= 1:
+            QMessageBox.information(self, "Cannot Remove",
+                "At least one version tab must remain.")
+            return
+
+        # Find the version for this tab
+        tab_text = self.version_tabs.tabText(idx)
+        version_to_remove = None
+        for ver, config in self.version_configs.items():
+            if f"v{ver.rstrip('.x')}" == tab_text:
+                version_to_remove = ver
+                break
+
+        if version_to_remove:
+            del self.version_configs[version_to_remove]
+        self.version_tabs.removeTab(idx)
+
+    def _on_sync_toggled(self, checked: bool):
+        """Sync or unsync selections across architectures."""
+        if not checked:
+            return
+
+        # Get all packages from the current active tree
+        current_idx = self.version_tabs.currentIndex()
+        if current_idx < 0:
+            return
+
+        tab_text = self.version_tabs.tabText(current_idx)
+        current_ver = None
+        for ver in self.version_configs:
+            if f"v{ver.rstrip('.x')}" == tab_text:
+                current_ver = ver
+                break
+
+        if not current_ver:
+            return
+
+        trees = self.version_configs[current_ver]
+        # Get union of all selected packages
+        all_selected = set()
+        for arch, tree in trees.items():
+            all_selected.update(tree.get_selected_packages())
+
+        # Apply to all trees
+        for arch, tree in trees.items():
+            tree.set_selected_packages(list(all_selected))
 
     def _refresh_devices(self):
         """Refresh USB device list."""
