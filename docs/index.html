@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TinyCore MultiBoot Factory</title>
+    <style>
+        :root {
+            --bg: #1e1e2e;
+            --surface: #313244;
+            --text: #cdd6f4;
+            --accent: #89b4fa;
+            --green: #a6e3a1;
+            --pink: #f38ba8;
+            --mauve: #cba6f7;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .container { max-width: 960px; margin: 0 auto; padding: 2rem; }
+        header {
+            text-align: center; padding: 4rem 0 2rem;
+            border-bottom: 1px solid var(--surface);
+        }
+        h1 { font-size: 2.5rem; color: var(--mauve); margin-bottom: 0.5rem; }
+        h2 { color: var(--accent); margin: 2rem 0 1rem; }
+        h3 { color: var(--green); margin: 1.5rem 0 0.5rem; }
+        p { margin-bottom: 1rem; }
+        .badge {
+            display: inline-block; padding: 0.25rem 0.75rem;
+            background: var(--surface); border-radius: 1rem;
+            font-size: 0.85rem; margin: 0.25rem;
+        }
+        .features { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 2rem 0; }
+        .feature {
+            background: var(--surface); padding: 1.5rem; border-radius: 8px;
+            border: 1px solid transparent; transition: border-color 0.2s;
+        }
+        .feature:hover { border-color: var(--accent); }
+        .feature h3 { margin-top: 0; }
+        code {
+            background: var(--surface); padding: 0.2rem 0.4rem;
+            border-radius: 4px; font-family: 'Fira Code', monospace;
+        }
+        pre {
+            background: var(--surface); padding: 1rem; border-radius: 8px;
+            overflow-x: auto; margin: 1rem 0;
+        }
+        .btn {
+            display: inline-block; padding: 0.75rem 1.5rem;
+            background: var(--accent); color: var(--bg); border-radius: 8px;
+            text-decoration: none; font-weight: bold; margin: 0.5rem;
+            transition: opacity 0.2s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-green { background: var(--green); }
+        footer {
+            text-align: center; padding: 2rem 0; margin-top: 3rem;
+            border-top: 1px solid var(--surface); color: #6c7086;
+        }
+        @media (max-width: 600px) { .features { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🖥️ TinyCore MultiBoot Factory</h1>
+            <p>Создайте мультизагрузочную флешку с Tiny Core Linux за несколько кликов</p>
+            <div>
+                <span class="badge">🐍 Python 3.10+</span>
+                <span class="badge">🖼️ PyQt6</span>
+                <span class="badge">🐧 x86</span>
+                <span class="badge">🖥️ x86_64</span>
+                <span class="badge">📱 aarch64</span>
+            </div>
+        </header>
+
+        <section>
+            <h2>🚀 Возможности</h2>
+            <div class="features">
+                <div class="feature">
+                    <h3>💽 USB Detection</h3>
+                    <p>Автоопределение USB-флешек на Windows, Linux и macOS.</p>
+                </div>
+                <div class="feature">
+                    <h3>📦 Менеджер пакетов</h3>
+                    <p>Скачивание .tcz пакетов с зависимостями из репозиториев Tiny Core Linux.</p>
+                </div>
+                <div class="feature">
+                    <h3>🔧 GRUB Установка</h3>
+                    <p>Установка загрузчика GRUB для BIOS (i386-pc) и UEFI (x86_64-efi).</p>
+                </div>
+                <div class="feature">
+                    <h3>💾 Разметка диска</h3>
+                    <p>FAT32 (загрузочный) + exFAT (данные). Настраиваемый размер раздела.</p>
+                </div>
+                <div class="feature">
+                    <h3>📋 Логирование</h3>
+                    <p>Дата-штампованные логи в папке <code>logs/</code> и в системе.</p>
+                </div>
+                <div class="feature">
+                    <h3>💾 Профили</h3>
+                    <p>Сохраняйте и загружайте настройки через JSON-профили.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>📥 Установка</h2>
+            <pre><code>git clone https://github.com/falcga/TinyFactory.git
+cd TinyFactory
+pip install -r requirements.txt
+python main.py</code></pre>
+        </section>
+
+        <section>
+            <h2>📖 Использование</h2>
+            <ol>
+                <li>Вставьте USB-флешку и запустите приложение</li>
+                <li>Выберите флешку из списка</li>
+                <li>Отметьте пакеты для x86, x86_64 и/или aarch64</li>
+                <li>Настройте размер boot-раздела и параметры GRUB</li>
+                <li>Нажмите «Build USB Drive»</li>
+                <li>Готово! Загружайтесь с флешки</li>
+            </ol>
+        </section>
+
+        <section>
+            <h2>🏗️ Структура флешки</h2>
+            <pre><code>/sda1 (FAT32, 200-4000 MB) — загрузочный раздел
+├── boot/
+│   ├── grub/grub.cfg
+│   ├── vmlinuz-x86, core.gz-x86
+│   ├── vmlinuz-x86_64, corepure64.gz
+│   └── vmlinuz-aarch64, corearm64.gz
+
+/sda2 (exFAT) — общий раздел
+├── tce/
+│   ├── x86/onboot.lst + optional/*.tcz
+│   ├── x86_64/onboot.lst + optional/*.tcz
+│   └── aarch64/onboot.lst + optional/*.tcz
+├── home/
+└── opt/</code></pre>
+        </section>
+
+        <section>
+            <h2>⚙️ Технологии</h2>
+            <ul>
+                <li><strong>Язык:</strong> Python 3.10+</li>
+                <li><strong>GUI:</strong> PyQt6 (Catppuccin Mocha theme)</li>
+                <li><strong>Сеть:</strong> requests + ThreadPoolExecutor</li>
+                <li><strong>Диски:</strong> diskpart (Win), parted (Linux), diskutil (macOS)</li>
+                <li><strong>Репозитории:</strong> tinycorelinux.net/17.x</li>
+            </ul>
+        </section>
+
+        <section style="text-align: center; margin: 3rem 0;">
+            <a href="https://github.com/falcga/TinyFactory" class="btn">📦 GitHub Repository</a>
+            <a href="https://github.com/falcga/TinyFactory/issues" class="btn btn-green">🐛 Report Issue</a>
+        </section>
+
+        <footer>
+            <p>TinyCore MultiBoot Factory v1.1.0</p>
+            <p>Built with ❤️ using Python & PyQt6</p>
+        </footer>
+    </div>
+</body>
+</html>
